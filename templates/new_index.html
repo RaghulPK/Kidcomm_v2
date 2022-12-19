@@ -128,7 +128,7 @@
             })
 
 <!--Establishing the websocket connection for microphone-->
-            const socket = new WebSocket('ws://localhost:5555/listen')
+            const socket = new WebSocket('ws://localhost:8029/listen')
 
 <!--Function that gets called when socket connection is made-->
 <!--Event listener is added for microphone-->
@@ -142,7 +142,7 @@
             }
 
 <!--Event listener is added for buttons-->
-            const button_socket = new WebSocket('ws://localhost:5555/button')
+            const button_socket = new WebSocket('ws://localhost:8029/button')
             const prev_button = document.getElementById('button1');
             const next_button = document.getElementById('button2');
             const play_button = document.getElementById('button3');
