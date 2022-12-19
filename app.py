@@ -390,4 +390,4 @@ if __name__ == "__main__":
     aio_app.router.add_route('GET', '/listen', socket)
     aio_app.router.add_route('GET', '/button', button_socket)
     aio_app.add_routes(routes)
-    web.run_app(aio_app, host='127.0.0.1', port=5555)
+    web.run_app(aio_app, host='0.0.0.0', port=8029)
