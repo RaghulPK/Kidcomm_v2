@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+   <head>
+       <title>Live Transcription</title>
+       <style>
+            .image_parent {
+                position: relative;
+                top: 0;
+                left: 0;
+              }
+            .image1 {
+                position: relative;
+                top: 30px;
+                left: 0px;
+                overflow-x:hidden;
+                overflow-y:hidden;
+              }
+            .image2 {
+                position: absolute;
+                top: -170px;
+                left: -250px;
+                overflow-x:hidden;
+                overflow-y:hidden;
+              }
+
+            .left {
+              position: absolute;
+              left: 30px;
+              padding: 10px;
+            }
+
+            .centre {
+              margin: auto;
+            }
+
+            .right {
+              position: absolute;
+              right: 30px;
+              padding: 10px;
+            }
+
+            .speechBox {
+              position: relative;
+              top: 80px;
+              left: 0px;
+              width: 800px;
+              padding: 0px;
+              background-color: #FFFF94;
+              color: black;
+              font-family: "Monaco", sans-serif;
+              font-weight: 700;
+              border: 2px solid green;
+              margin: 0;
+              border-radius: 8px;
+            }
+
+           .button {
+              width: 100px;
+              height: 100px;
+              margin: 4px 2px;
+              transition-duration: 0.4s;
+              cursor: pointer;
+            }
+
+            .button3 {
+              position: relative;
+              top: 20px;
+              left: 0px;
+            }
+
+            .button3:hover {
+              position: relative;
+              top: 10px;
+              left: 0px;
+            }
+
+            .button1 {
+              position: relative;
+              top: -20px;
+              left: 180px;
+            }
+
+            .button1:hover {
+              position: relative;
+              top: -20px;
+              left: 170px;
+            }
+
+            .button2 {
+              position: relative;
+              top: -20px;
+              left: -200px;
+            }
+
+            .button2:hover {
+              position: relative;
+              top: -20px;
+              left: -190px;
+            }
+
+       </style>
+   </head>
+   <body style="background-color: black"; >
+        <div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
+            <div class="image_parent">
+                 <center>
+                     <img class="image1" src="https://drive.google.com/uc?export=view&id=1wbSw1QCwSliXhMvI7FzRJ9uq4wJcyxhg" id="storyImage" width="600" height="370" >
+                     <img class="image2" src="https://drive.google.com/uc?export=view&id=1w514PlwqUuSmprR04T4Dui0SusMl9-R3" id="TVframe" width="1300" height="800" >
+                     <p id="status">Connection status will go here</p>
+                    <center>
+                        <input class="button button3" type="image" src="https://drive.google.com/uc?export=view&id=1lNulbIqAc26rMQbaJodFxjHgSE7iHFCn" alt="Prev_button" value="PAUSE" name="btnPause" id="button3"/>
+                        <div class="speechBox" id="textBox"><p id="transcript"></p></div>
+                    </center>
+                 </center>
+            </div>
+<!--            <div class="left"><input class="button button1" value="PREV" name="btnPrev" id="button1"/></div>-->
+            <div class="left"><input class="button button1" type="image" src="https://drive.google.com/uc?export=view&id=1lNulbIqAc26rMQbaJodFxjHgSE7iHFCn" alt="Prev_button" value="PREV" id="button1"/></div>
+            <div class="right"><input class="button button2" type="image" src="https://drive.google.com/uc?export=view&id=1BvM5PO1qN8k5C2WaL2SL0ltoEDmaQFOW" alt="Next_button" value="NEXT" name="btnNext" id="button2"/></div>
+        </div>
+
+        <script>
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+            if (!MediaRecorder.isTypeSupported('audio/webm'))
+                return alert('Browser not supported')
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm',
+            })
+
+<!--Establishing the websocket connection for microphone-->
+            const socket = new WebSocket('ws://localhost:5555/listen')
+
+<!--Function that gets called when socket connection is made-->
+<!--Event listener is added for microphone-->
+            socket.onopen = () => {
+                document.querySelector('#status').textContent = ''
+                mediaRecorder.addEventListener('dataavailable', async (event) => {
+                    if (event.data.size > 0 && socket.readyState == 1)
+                        socket.send(event.data)
+            })
+            mediaRecorder.start(250)
+            }
+
+<!--Event listener is added for buttons-->
+            const button_socket = new WebSocket('ws://localhost:5555/button')
+            const prev_button = document.getElementById('button1');
+            const next_button = document.getElementById('button2');
+            const play_button = document.getElementById('button3');
+            button_socket.onopen = () => {
+                prev_button.addEventListener('click', function prev_handleClick()
+                {
+                    button_socket.send('Prev_button')
+                });
+                next_button.addEventListener('click', function next_handleClick()
+                {
+                    button_socket.send('Next_button')
+                });
+                play_button.addEventListener('click', function play_handleClick() {
+                    if (this.value=="PLAY")
+                    {
+                        button_socket.send(this.value)
+                        this.value = "PAUSE";
+                    }
+                    else
+                    {
+                        button_socket.send(this.value)
+                        this.value = "PLAY";
+                    }
+                });
+            }
+
+<!--Function called when data is received from current_main.py-->
+            socket.onmessage = (message) =>
+            {
+                s = message.data
+                sep = s.indexOf(';')
+                const received = s.slice(0,sep)
+
+                const rem1 = s.slice(sep+1)
+                sep2 = rem1.indexOf(';')
+                const img_path = rem1.slice(0,sep2)
+                var image = document.getElementById('storyImage');
+
+                const rem2 = rem1.slice(sep2+1)
+                sep3 = rem2.indexOf(';')
+                const colour_flag = rem2.slice(0,sep3)
+
+                const rem3 = rem2.slice(sep3+1)
+                const line_no = parseInt(rem3)
+
+                image.src = img_path
+                document.querySelector('#transcript').textContent = s
+                if (colour_flag==="0")
+                {
+                    document.querySelector('#textBox').style.backgroundColor = '#F08080';
+                    document.querySelector('#textBox').style.borderColor = 'red';
+                }
+                else if (colour_flag==="1")
+                {
+                    document.querySelector('#textBox').style.backgroundColor = '#FFFF8F';
+                    document.querySelector('#textBox').style.borderColor = 'green';
+                }
+
+                if (line_no==5)
+                {
+<!--                    alert("Redirecting...");-->
+                    window.open("./output", "_self");
+                }
+           }
+
+           })
+        </script>
+
+    </body>
+</html>

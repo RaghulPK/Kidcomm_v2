@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+   <head>
+       <title>Live Transcription</title>
+       <style>
+            .image_parent {
+                position: relative;
+                top: 0;
+                left: 0;
+              }
+            .image1 {
+                position: relative;
+                top: 30px;
+                left: 0px;
+                overflow-x:hidden;
+                overflow-y:hidden;
+              }
+            .image2 {
+                position: absolute;
+                top: -170px;
+                left: -250px;
+                overflow-x:hidden;
+                overflow-y:hidden;
+              }
+
+            .left {
+              position: absolute;
+              left: 30px;
+              padding: 10px;
+            }
+
+            .centre {
+              margin: auto;
+            }
+
+            .right {
+              position: absolute;
+              right: 30px;
+              padding: 10px;
+            }
+
+            .speechBox {
+              position: relative;
+              top: 80px;
+              left: 0px;
+              width: 800px;
+              padding: 0px;
+              background-color: #FFFF94;
+              color: black;
+              font-family: "Monaco", sans-serif;
+              font-weight: 700;
+              border: 2px solid green;
+              margin: 0;
+              border-radius: 8px;
+            }
+
+           .button {
+              border: none;
+              color: white;
+              width: 60px;
+              height: 60px;
+              text-align: center;
+              display: inline-block;
+              font-family: "Lucida Console";
+              font-size: 20px;
+              font-weight: 600;
+              margin: 4px 2px;
+              transition-duration: 0.4s;
+              cursor: pointer;
+              border-radius: 8px;
+            }
+
+            .button3 {
+              position: relative;
+              top: 20px;
+              left: 0px;
+              width: 100px;
+              color: black;
+              background-color: #ffb366;
+              border: 2px solid black;
+<!--              box-shadow: 5px 5px 10px 2px rgba(255,255,255,.8);-->
+            }
+
+            .button3:hover {
+              position: relative;
+              top: 10px;
+              left: 0px;
+              width: 100px;
+              background-color: #994d00;
+              color: white;
+              border: 2px solid black;
+<!--              box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);-->
+            }
+
+            .button1 {
+              position: relative;
+              top: -20px;
+              left: 180px;
+              background-color: LightGreen;
+              color: black;
+              border: 2px solid #4CAF50;
+            }
+
+            .button1:hover {
+              position: relative;
+              top: -20px;
+              left: 170px;
+              background-color: #4CAF50;
+              color: white;
+            }
+
+            .button2 {
+              position: relative;
+              top: -20px;
+              left: -200px;
+              background-color: LightBlue;
+              color: black;
+              border: 2px solid #008CBA;
+            }
+
+            .button2:hover {
+              position: relative;
+              top: -20px;
+              left: -190px;
+              background-color: #008CBA;
+              color: white;
+            }
+
+       </style>
+   </head>
+   <body style="background-color: black"; >
+        <div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
+            <div class="image_parent">
+                 <center>
+                     <img class="image1" src="https://drive.google.com/uc?export=view&id=1wbSw1QCwSliXhMvI7FzRJ9uq4wJcyxhg" id="storyImage" width="600" height="370" >
+                     <img class="image2" src="https://drive.google.com/uc?export=view&id=1w514PlwqUuSmprR04T4Dui0SusMl9-R3" id="TVframe" width="1300" height="800" >
+                     <p id="status">Connection status will go here</p>
+                    <center>
+                        <input class="button button3" value="PAUSE" name="btnPause" id="button3"/>
+                        <div class="speechBox" id="textBox"><p id="transcript"></p></div>
+                    </center>
+                 </center>
+            </div>
+<!--            <div class="left"><input class="button button1" value="PREV" name="btnPrev" id="button1"/></div>-->
+            <div class="left"><input type="image" src="https://drive.google.com/uc?export=view&id=1lNulbIqAc26rMQbaJodFxjHgSE7iHFCn" alt="Submit" width="75" height="75" value="PREV" id="button1"/></div>
+            <div class="right"><input class="button button2" value="NEXT" name="btnNext" id="button2"/></div>
+        </div>
+
+        <script>
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+            if (!MediaRecorder.isTypeSupported('audio/webm'))
+                return alert('Browser not supported')
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm',
+            })
+
+<!--Establishing the websocket connection for microphone-->
+            const socket = new WebSocket('ws://localhost:5555/listen')
+
+<!--Function that gets called when socket connection is made-->
+<!--Event listener is added for microphone-->
+            socket.onopen = () => {
+                document.querySelector('#status').textContent = ''
+                mediaRecorder.addEventListener('dataavailable', async (event) => {
+                    if (event.data.size > 0 && socket.readyState == 1)
+                        socket.send(event.data)
+            })
+            mediaRecorder.start(250)
+            }
+
+<!--Event listener is added for buttons-->
+            const button_socket = new WebSocket('ws://localhost:5555/button')
+            const prev_button = document.getElementById('button1');
+            const next_button = document.getElementById('button2');
+            const play_button = document.getElementById('button3');
+            button_socket.onopen = () => {
+                prev_button.addEventListener('click', function prev_handleClick()
+                {
+                    button_socket.send('Prev_button')
+                });
+                next_button.addEventListener('click', function next_handleClick()
+                {
+                    button_socket.send('Next_button')
+                });
+                play_button.addEventListener('click', function play_handleClick() {
+                    if (this.value=="PLAY")
+                    {
+                        button_socket.send(this.value)
+                        this.value = "PAUSE";
+                    }
+                    else
+                    {
+                        button_socket.send(this.value)
+                        this.value = "PLAY";
+                    }
+                });
+            }
+
+<!--Function called when data is received from current_main.py-->
+            socket.onmessage = (message) =>
+            {
+                s = message.data
+                sep = s.indexOf(';')
+                const received = s.slice(0,sep)
+
+                const rem1 = s.slice(sep+1)
+                sep2 = rem1.indexOf(';')
+                const img_path = rem1.slice(0,sep2)
+                var image = document.getElementById('storyImage');
+
+                const rem2 = rem1.slice(sep2+1)
+                sep3 = rem2.indexOf(';')
+                const colour_flag = rem2.slice(0,sep3)
+
+                const rem3 = rem2.slice(sep3+1)
+                const line_no = parseInt(rem3)
+
+                image.src = img_path
+                document.querySelector('#transcript').textContent = s
+                if (colour_flag==="0")
+                {
+                    document.querySelector('#textBox').style.backgroundColor = '#F08080';
+                    document.querySelector('#textBox').style.borderColor = 'red';
+                }
+                else if (colour_flag==="1")
+                {
+                    document.querySelector('#textBox').style.backgroundColor = '#FFFF8F';
+                    document.querySelector('#textBox').style.borderColor = 'green';
+                }
+
+                if (line_no==5)
+                {
+<!--                    alert("Redirecting...");-->
+                    window.open("./output", "_self");
+                }
+           }
+
+           })
+        </script>
+
+    </body>
+</html>
